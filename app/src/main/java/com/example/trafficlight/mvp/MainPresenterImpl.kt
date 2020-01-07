@@ -14,20 +14,15 @@ class MainPresenterImpl(private val view: MainView) : MainPresenter {
 
     companion object {
         const val TAG = "MainPresenterImpl"
-        const val FIRST_INDEX = 0
         const val TICK_PERIOD_IN_MILLIS = 500L
-        const val TICKS_BEFORE_BLINKING = 6
-        const val TICKS_BEFORE_SWITCHING_LIGHTS = 10L
-        const val STATE_ON = "STATE_ON"
-        const val STATE_OFF = "STATE_OFF"
     }
 
     private var compositeDisposable = CompositeDisposable()
-    private var index: Int = FIRST_INDEX
-    private var lightsList: List<Light> = listOf(
-        Light(Light.Color.RED, true),
-        Light(Light.Color.YELLOW),
-        Light(Light.Color.GREEN)
+    private var light: Light? = null
+    private var lightsList: ArrayList<Light> = arrayListOf(
+        Light(0, Light.Color.RED, true),
+        Light(1, Light.Color.YELLOW),
+        Light(2, Light.Color.GREEN)
     )
 
     override fun onCreateView() {
@@ -35,6 +30,7 @@ class MainPresenterImpl(private val view: MainView) : MainPresenter {
 
         view.init()
         view.setLightsData(lightsList)
+
         manageTrafficLight()
     }
 
@@ -43,12 +39,14 @@ class MainPresenterImpl(private val view: MainView) : MainPresenter {
     }
 
     private fun manageTrafficLight() {
+        light = lightsList.firstOrNull()
+
         Observable.interval(TICK_PERIOD_IN_MILLIS, TimeUnit.MILLISECONDS)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .doOnNext { if (it >= TICKS_BEFORE_BLINKING) changeLightState() }
-            .takeUntil { it == TICKS_BEFORE_SWITCHING_LIGHTS }
-            .doOnComplete { updateList() }
+            .doOnNext { if (it >= light?.typeColor?.ticksBeforeBlinking ?: 0) changeLightState() }
+            .takeUntil { it == light?.typeColor?.ticksBeforeSwitching ?: 0 }
+            .doOnComplete { switchLight() }
             .repeat()
             .subscribe(
                 { Log.d(TAG, it.toString()) },
@@ -57,35 +55,35 @@ class MainPresenterImpl(private val view: MainView) : MainPresenter {
     }
 
     private fun changeLightState() {
-        lightsList[index].isOn = !lightsList[index].isOn
-        view.setLightsData(lightsList)
+        val index = light?.id ?: 0
+        update(index, !lightsList[index].isOn)
     }
 
-    private fun updateList() {
+    private fun switchLight() {
         offAllLights()
-        lightsList[getIndex()].isOn = true
+        getNextLight()
+        val index = light?.id ?: 0
+        update(index, true)
+    }
+
+    private fun update(index: Int, isOn: Boolean) {
+        lightsList[index] = lightsList[index].copy(isOn = isOn)
         view.setLightsData(lightsList)
     }
 
-    private fun getIndex(): Int {
-        index = if (--index < FIRST_INDEX) lightsList.lastIndex else index
-        return index
+    private fun getNextLight() {
+        val i = (light?.id ?: 0) - 1
+        val index = if (i < 0) lightsList.lastIndex else i
+        light = lightsList[index]
     }
 
     private fun offAllLights() {
-        lightsList.forEach { it.isOn = false }
+        lightsList.map { it.copy(isOn = false) }
     }
 
     override fun onItemClicked(item: ItemType) {
-        val info = when (item) {
-            is Light -> {
-                val color = item.typeColor
-                val state = if (item.isOn) STATE_ON else STATE_OFF
-                "$color light: $state"
-            }
-            else -> "Unknown item!"
+        when (item) {
+            is Light -> view.showItemInfo("${item.typeColor}")
         }
-
-        view.showItemInfo(info)
     }
 }
