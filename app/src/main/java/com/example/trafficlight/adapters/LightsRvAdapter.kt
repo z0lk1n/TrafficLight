@@ -20,6 +20,5 @@ class LightsRvAdapter(listener: ItemClickListener) : BaseAdapter() {
         itemList.clear()
         itemList.addAll(newList)
         diffResult.dispatchUpdatesTo(this)
-//        notifyDataSetChanged()
     }
 }

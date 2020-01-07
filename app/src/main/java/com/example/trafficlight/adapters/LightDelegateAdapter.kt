@@ -31,6 +31,6 @@ class LightDelegateAdapter(private val itemLayout: Int) : DelegateAdapter {
         }
 
         private fun getImage(item: Light): Int =
-            if (item.isOn) item.image else R.drawable.img_gray_stub
+            if (item.isOn) item.typeColor.res else R.drawable.img_gray_stub
     }
 }

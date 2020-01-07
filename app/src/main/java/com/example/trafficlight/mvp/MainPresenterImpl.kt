@@ -1,8 +1,6 @@
 package com.example.trafficlight.mvp
 
 import android.util.Log
-import androidx.annotation.DrawableRes
-import com.example.trafficlight.R
 import com.example.trafficlight.base.ItemType
 import com.example.trafficlight.extensions.addTo
 import com.example.trafficlight.model.Light
@@ -22,17 +20,14 @@ class MainPresenterImpl(private val view: MainView) : MainPresenter {
         const val TICKS_BEFORE_SWITCHING_LIGHTS = 10L
         const val STATE_ON = "STATE_ON"
         const val STATE_OFF = "STATE_OFF"
-        const val RED_COLOR = "Red"
-        const val YELLOW_COLOR = "Yellow"
-        const val GREEN_COLOR = "Green"
     }
 
     private var compositeDisposable = CompositeDisposable()
     private var index: Int = FIRST_INDEX
     private var lightsList: List<Light> = listOf(
-        Light(R.drawable.img_red_light, true),
-        Light(R.drawable.img_yellow_light),
-        Light(R.drawable.img_green_light)
+        Light(Light.Color.RED, true),
+        Light(Light.Color.YELLOW),
+        Light(Light.Color.GREEN)
     )
 
     override fun onCreateView() {
@@ -84,7 +79,7 @@ class MainPresenterImpl(private val view: MainView) : MainPresenter {
     override fun onItemClicked(item: ItemType) {
         val info = when (item) {
             is Light -> {
-                val color = getColorName(item.image)
+                val color = item.typeColor
                 val state = if (item.isOn) STATE_ON else STATE_OFF
                 "$color light: $state"
             }
@@ -93,12 +88,4 @@ class MainPresenterImpl(private val view: MainView) : MainPresenter {
 
         view.showItemInfo(info)
     }
-
-    private fun getColorName(@DrawableRes image: Int): String =
-        when (image) {
-            R.drawable.img_red_light -> RED_COLOR
-            R.drawable.img_yellow_light -> YELLOW_COLOR
-            R.drawable.img_green_light -> GREEN_COLOR
-            else -> throw Exception("Unknown image!")
-        }
 }
